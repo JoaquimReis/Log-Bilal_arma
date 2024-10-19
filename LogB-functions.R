@@ -3,10 +3,11 @@
 
 # PROBABILITY DENSITY FUNCTION
 
-dLB <- function(y, theta= .15)
+dLB <- function(y, mu= .5)
 {
+  theta <- (mu / (mu + 24))^(-1/2) - 5
   
-  fx1 <- 6 / theta * y^(2 / theta-1) * (1 - y^(1/ theta))
+  fx1 <- (12 / theta) * y^(4 / theta - 1) * (1 - y^(2 / theta))
   
   return(fx1)
   
@@ -17,35 +18,54 @@ integrate(dLB,0,1)
 
 # CUMULATIVE DISTRIBUTION FUNCTION 
 
-pLB <-  function(y, theta = 0.15) 
+pLB <-  function(y, mu = 0.5) 
 {
+  theta <- (mu / (mu + 24))^(-1/2) - 5
+  
   cdf <- 3*y^(2/theta)-2*y^(3/theta)
   
   return(cdf)
 }
 
-pLB(.9999,2)
-integrate(dLB, 0, .75,theta=2)
+pLB(.25)
+integrate(dLB, 0, .5)
 
 
 # QUANTILE FUNCTION
 
-qLB<-function(u,theta=0.5)
+qLB<-function(u=0.5, mu=0.5)
 {
-  q <- 
-    return(q)
+  theta <- (mu / (mu + 24))^(-1/2) - 5
+  
+  erro <- 2 * sqrt(u^2 - u) - 2 * u + 1
+  
+  q <- (2 / theta * (1 + expr^(1/3) + 1 / expr^(1/3)))^theta
+  
+  return(q)
+  
 }
-
 u=pLB(.82)
-qLB(u,theta = 0.5)
+qLB(u,mu=.5) #In sqrt(u^2 - u) : NaNs produzidos
 
 
-# INVERSION METHOD FOR RANDOM GENERATION
+#Como existem apenas dois numeros no Reais (0,1), busca outro metodo para gerar numeros aleatorios
+  
 
-rLB <- function(n, alpha = 0.5) {
-  u <- runif(n)
-  y <- 1-(sqrt((1-u)^(1/alpha)))
-  return(y)
+# METHOD FOR RANDOM GENERATION
+
+inverse <- function(f, lower, upper){
+  function(y){
+    uniroot(function(x){f(x) - y}, lower = lower, upper = upper, tol=1e-3)$root
+  }
 }
 
-rLB(100)
+
+quantile_function <- inverse(pLB, lower = 0, upper = 1) 
+n <- 100
+uniform_random <- runif(n, min = 0, max = 1)
+
+
+numbers <- sapply(uniform_random, quantile_function)
+
+numbers
+
