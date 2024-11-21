@@ -3,32 +3,33 @@
 
 # PROBABILITY DENSITY FUNCTION
 
-dLB <- function(y, mu= .5)
-{
-  theta <- (mu / (mu + 24))^(-1/2) - 5
+# theta <- (mu / (mu + 24))^(-1/2) - 5
+
+dLB <- function(y, mu = 0.5) {
   
-  fx1 <- (12 / theta) * y^(4 / theta - 1) * (1 - y^(2 / theta))
+  fx1 <- (12 / ((mu / (mu + 24))^(-1/2) - 5)) * y^(4 / ((mu / (mu + 24))^(-1/2) - 5) - 1) * (1 - y^(2 / ((mu / (mu + 24))^(-1/2) - 5)))
   
   return(fx1)
-  
-}  
+}
+
 
 integrate(dLB,0,1) 
 
 
 # CUMULATIVE DISTRIBUTION FUNCTION 
 
-pLB <-  function(y, mu = 0.5) 
-{
-  theta <- (mu / (mu + 24))^(-1/2) - 5
+pLB <- function(y, mu = 0.5) {
   
-  cdf <- 3*y^(2/theta)-2*y^(3/theta)
+  cdf <- 3 * y^(2 / ((mu / (mu + 24))^(-1/2) - 5)) - 2 * y^(3 / ((mu / (mu + 24))^(-1/2) - 5))
   
   return(cdf)
 }
 
-pLB(.25)
-integrate(dLB, 0, .5)
+pLB(0.25)
+
+
+integrate(dLB, 0, 0.5)
+
 
 
 # QUANTILE FUNCTION
