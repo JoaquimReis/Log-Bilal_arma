@@ -74,5 +74,5 @@ simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=2,freq=12,
 dados=simu.LogBarma(100)
 plot(dados)
 # 
-#y<-simu.ugoarma(10000)
-#plot(simu.ugoarma(1000))
+#y<-simu.LogBarma(10000)
+#plot(simu.LogBarma(1000))
