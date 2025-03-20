@@ -1,7 +1,12 @@
+# ---------------------------------------------------------------------------
+# FUNÇÃO PARA SIMULAÇÃO DE SÉRIES TEMPORAIS USANDO O MODELO LOG-BILAL ARMA
+# ---------------------------------------------------------------------------
 simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
                          link="logit") # phi = Autoregressivo             theta = Médias moveis           tau = quantil
 {
   source("LogB-functions.R")
+  
+  
   if(any(is.na(phi)==F))
   {
     ar <- 1:length(phi)
