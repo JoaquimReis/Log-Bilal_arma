@@ -1,10 +1,11 @@
-rm(list = ls())
-
+# ---------------------------------------------------------------------------
+# FUNÇÃO PARA AJUSTE DO MODELO LOG-BILAL ARMA
+# ---------------------------------------------------------------------------
 LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1, 
-                        diag = 0, X = NA, X_hat = NA)
+                         diag = 0, X = NA, X_hat = NA)
 {
   # Se necessário, ajuste o caminho:
-  # source("ugo-functions.R")  
+  # source("LogB-functions.R")  
   
   #----------------------------------------------------------------------------
   # 0) Preparação básica
@@ -121,7 +122,7 @@ LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1,
   
   # Número total de parâmetros:
   # alpha + (k betas) + (p1 phis) + (q1 thetas) + sigma
-  n_par <- k + p1 + q1 + 2
+  n_par <- k + p1 + q1 + 1
   
   initial <- rep(0, n_par)
   # Preenche: alpha + betas + phis
@@ -140,7 +141,7 @@ LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1,
     i_theta <- (1 + k + p1 + 1) : (1 + k + p1 + q1)
     if(q1>0) theta <- z[i_theta] else theta <- numeric(0)
     
-    sigma <- z[length(z)]
+    # sigma <- z[length(z)]
     
     Xbeta <- as.vector(X %*% beta)
     if(any(p1>0)) {
@@ -175,148 +176,148 @@ LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1,
     sum(ll)
   }
   
-  # c) Score (gradiente)
-  
-  escore.LogBarma <- function(z)
-  {
-    alpha <- z[1]
-    
-    if(k>0)  beta  <- z[2:(1+k)] else beta <- numeric(0)
-    i_phi <- (1 + k + 1) : (1 + k + p1)
-    if(p1>0) phi <- z[i_phi] else phi <- numeric(0)
-    i_theta <- (1 + k + p1 + 1) : (1 + k + p1 + q1)
-    if(q1>0) theta <- z[i_theta] else theta <- numeric(0)
-    
-    # sigma deve ser o último
-    sigma <- z[length(z)]
-    
-    # Recalcular eta/error a cada iteração
-    Xbeta <- as.vector(X %*% beta)
-    if(p1>0) {
-      Xbeta_ar <- suppressWarnings(matrix(Xbeta, (n-1), max(p,1,na.rm=TRUE)))
-    } else {
-      Xbeta_ar <- rep(0, (n-1))
-    }
-    
-    for(i in (m+1):n){
-      eta[i] <- alpha
-      if(k>0)  eta[i] <- eta[i] + Xbeta[i]
-      if(p1>0) {
-        eta[i] <- eta[i] + (ynew_ar[(i-1), ar] - Xbeta_ar[(i-1), ar]) %*% phi
-      }
-      if(q1>0) {
-        eta[i] <- eta[i] + t(theta) %*% error[i - ma]
-      }
-      error[i] <- ynew[i] - eta[i]
-    }
-    
-    # Precisamos de mu e x para as derivadas
-    mu <- linkinv(eta[(m+1):n])
-    x  <- y[(m+1):n]
-    
-    # Montar R p/ termo MA
-    if(q1>0) {
-      for(i in 1:(n-m)) {
-        R[i,] <- error[i+m - ma] * k_i
-      }
-    }
-    
-    # Zeramos derivadas
-    deta.dalpha[]  <- 0
-    if(k>0)  deta.dbeta[,]  <- 0
-    if(p1>0) deta.dphi[,]   <- 0
-    if(q1>0) deta.dtheta[,] <- 0
-    
-    for(i in (m+1):n) {
-      # d(eta_i)/d(alpha)
-      deta.dalpha[i] <- 1
-      if(q1>0 && (i-ma)>0) {
-        deta.dalpha[i] <- deta.dalpha[i] - (deta.dalpha[i-ma] %*% theta)
-      }
-      
-      # d(eta_i)/d(beta)
-      if(k>0){
-        temp_dbeta <- X[i, ]
-        # subtrair a parte AR?
-        if(p1>0) {
-          temp_dbeta <- temp_dbeta - t(phi) %*% X[i-ar, ]
-        }
-        # parte MA:
-        if(q1>0 && (i-ma)>0) {
-          temp_dbeta <- temp_dbeta - t(theta) %*% deta.dbeta[i-ma, ]
-        }
-        deta.dbeta[i, ] <- temp_dbeta
-      }
-      
-      # d(eta_i)/d(phi)
-      if(p1>0){
-        temp_dphi <- (ynew_ar[i - ar] - Xbeta[i - ar])
-        if(q1>0 && (i-ma)>0) {
-          temp_dphi <- temp_dphi - t(theta) %*% deta.dphi[i-ma, ]
-        }
-        deta.dphi[i, ] <- temp_dphi
-      }
-      
-      # d(eta_i)/d(theta)
-      if(q1>0){
-        temp_dtheta <- R[i-m, ]
-        if((i-ma)>0){
-          temp_dtheta <- temp_dtheta - t(theta) %*% deta.dtheta[i-ma, ]
-        }
-        deta.dtheta[i, ] <- temp_dtheta
-      }
-    }
-    
-    # Pegamos as partes (m+1):n
-    v  <- deta.dalpha[(m+1):n]
-    rM <- if(k>0)  deta.dbeta[(m+1):n, , drop=FALSE]  else matrix(0,0,0)
-    rP <- if(p1>0) deta.dphi[(m+1):n, , drop=FALSE]   else matrix(0,0,0)
-    rR <- if(q1>0) deta.dtheta[(m+1):n, , drop=FALSE] else matrix(0,0,0)
-    
-    # diag(mu.eta(eta_i))
-    mT <- diag(mu.eta(eta[(m+1):n]))
-    
-    # Derivada no preditor: a_t = d(logLik)/d(eta_i)
-    # (segue fórmula da UGo; ajuste se necessário)
-    a_t <- -sigma * mu^(-sigma - 1) / (1 - mu^-sigma) -
-      log(tau) * (1 - x^-sigma) * sigma * mu^(sigma-1) / (1 - mu^sigma)^2
-    
-    # Derivada no sigma:
-    y_sust <- as.vector(
-      1/sigma + log(mu)/(1 - mu^sigma) - log(x) +
-        ( mu^sigma * log(tau) * x^(-sigma) *
-            ((mu^sigma - 1)*log(x) - log(mu)*(x^sigma - 1))
-        ) / (mu^sigma - 1)^2
-    )
-    
-    # Montar cada componente do score:
-    Ualpha <- sum( v * (mT %*% a_t) )
-    
-    Ubeta  <- if(k>0) {
-      colSums( rM * as.vector(mT %*% a_t) )
-    } else numeric(0)
-    
-    Uphi   <- if(p1>0) {
-      colSums( rP * as.vector(mT %*% a_t) )
-    } else numeric(0)
-    
-    Utheta <- if(q1>0) {
-      colSums( rR * as.vector(mT %*% a_t) )
-    } else numeric(0)
-    
-    Uc <- sum(y_sust)
-    
-    # Agora concatenamos na ordem alpha, (betas), (phis), (thetas), sigma
-    
-    ## (Joaquim) não sei o que deve ser alterado aqui
-    score <- c(Ualpha)
-    if(k>0)  score <- c(score, Ubeta)
-    if(p1>0) score <- c(score, Uphi)
-    if(q1>0) score <- c(score, Utheta)
-    score <- c(score, Uc)
-    
-    return(score)
-  }
+  # # c) Score (gradiente)
+  # 
+  # escore.LogBarma <- function(z)
+  # {
+  #   alpha <- z[1]
+  #   
+  #   if(k>0)  beta  <- z[2:(1+k)] else beta <- numeric(0)
+  #   i_phi <- (1 + k + 1) : (1 + k + p1)
+  #   if(p1>0) phi <- z[i_phi] else phi <- numeric(0)
+  #   i_theta <- (1 + k + p1 + 1) : (1 + k + p1 + q1)
+  #   if(q1>0) theta <- z[i_theta] else theta <- numeric(0)
+  #   
+  #   # sigma deve ser o último
+  #   sigma <- z[length(z)]
+  #   
+  #   # Recalcular eta/error a cada iteração
+  #   Xbeta <- as.vector(X %*% beta)
+  #   if(p1>0) {
+  #     Xbeta_ar <- suppressWarnings(matrix(Xbeta, (n-1), max(p,1,na.rm=TRUE)))
+  #   } else {
+  #     Xbeta_ar <- rep(0, (n-1))
+  #   }
+  #   
+  #   for(i in (m+1):n){
+  #     eta[i] <- alpha
+  #     if(k>0)  eta[i] <- eta[i] + Xbeta[i]
+  #     if(p1>0) {
+  #       eta[i] <- eta[i] + (ynew_ar[(i-1), ar] - Xbeta_ar[(i-1), ar]) %*% phi
+  #     }
+  #     if(q1>0) {
+  #       eta[i] <- eta[i] + t(theta) %*% error[i - ma]
+  #     }
+  #     error[i] <- ynew[i] - eta[i]
+  #   }
+  #   
+  #   # Precisamos de mu e x para as derivadas
+  #   mu <- linkinv(eta[(m+1):n])
+  #   x  <- y[(m+1):n]
+  #   
+  #   # Montar R p/ termo MA
+  #   if(q1>0) {
+  #     for(i in 1:(n-m)) {
+  #       R[i,] <- error[i+m - ma] * k_i
+  #     }
+  #   }
+  #   
+  #   # Zeramos derivadas
+  #   deta.dalpha[]  <- 0
+  #   if(k>0)  deta.dbeta[,]  <- 0
+  #   if(p1>0) deta.dphi[,]   <- 0
+  #   if(q1>0) deta.dtheta[,] <- 0
+  #   
+  #   for(i in (m+1):n) {
+  #     # d(eta_i)/d(alpha)
+  #     deta.dalpha[i] <- 1
+  #     if(q1>0 && (i-ma)>0) {
+  #       deta.dalpha[i] <- deta.dalpha[i] - (deta.dalpha[i-ma] %*% theta)
+  #     }
+  #     
+  #     # d(eta_i)/d(beta)
+  #     if(k>0){
+  #       temp_dbeta <- X[i, ]
+  #       # subtrair a parte AR?
+  #       if(p1>0) {
+  #         temp_dbeta <- temp_dbeta - t(phi) %*% X[i-ar, ]
+  #       }
+  #       # parte MA:
+  #       if(q1>0 && (i-ma)>0) {
+  #         temp_dbeta <- temp_dbeta - t(theta) %*% deta.dbeta[i-ma, ]
+  #       }
+  #       deta.dbeta[i, ] <- temp_dbeta
+  #     }
+  #     
+  #     # d(eta_i)/d(phi)
+  #     if(p1>0){
+  #       temp_dphi <- (ynew_ar[i - ar] - Xbeta[i - ar])
+  #       if(q1>0 && (i-ma)>0) {
+  #         temp_dphi <- temp_dphi - t(theta) %*% deta.dphi[i-ma, ]
+  #       }
+  #       deta.dphi[i, ] <- temp_dphi
+  #     }
+  #     
+  #     # d(eta_i)/d(theta)
+  #     if(q1>0){
+  #       temp_dtheta <- R[i-m, ]
+  #       if((i-ma)>0){
+  #         temp_dtheta <- temp_dtheta - t(theta) %*% deta.dtheta[i-ma, ]
+  #       }
+  #       deta.dtheta[i, ] <- temp_dtheta
+  #     }
+  #   }
+  #   
+  #   # Pegamos as partes (m+1):n
+  #   v  <- deta.dalpha[(m+1):n]
+  #   rM <- if(k>0)  deta.dbeta[(m+1):n, , drop=FALSE]  else matrix(0,0,0)
+  #   rP <- if(p1>0) deta.dphi[(m+1):n, , drop=FALSE]   else matrix(0,0,0)
+  #   rR <- if(q1>0) deta.dtheta[(m+1):n, , drop=FALSE] else matrix(0,0,0)
+  #   
+  #   # diag(mu.eta(eta_i))
+  #   mT <- diag(mu.eta(eta[(m+1):n]))
+  #   
+  #   # Derivada no preditor: a_t = d(logLik)/d(eta_i)
+  #   # (segue fórmula da UGo; ajuste se necessário)
+  #   a_t <- -sigma * mu^(-sigma - 1) / (1 - mu^-sigma) -
+  #     log(tau) * (1 - x^-sigma) * sigma * mu^(sigma-1) / (1 - mu^sigma)^2
+  #   
+  #   # Derivada no sigma:
+  #   y_sust <- as.vector(
+  #     1/sigma + log(mu)/(1 - mu^sigma) - log(x) +
+  #       ( mu^sigma * log(tau) * x^(-sigma) *
+  #           ((mu^sigma - 1)*log(x) - log(mu)*(x^sigma - 1))
+  #       ) / (mu^sigma - 1)^2
+  #   )
+  #   
+  #   # Montar cada componente do score:
+  #   Ualpha <- sum( v * (mT %*% a_t) )
+  #   
+  #   Ubeta  <- if(k>0) {
+  #     colSums( rM * as.vector(mT %*% a_t) )
+  #   } else numeric(0)
+  #   
+  #   Uphi   <- if(p1>0) {
+  #     colSums( rP * as.vector(mT %*% a_t) )
+  #   } else numeric(0)
+  #   
+  #   Utheta <- if(q1>0) {
+  #     colSums( rR * as.vector(mT %*% a_t) )
+  #   } else numeric(0)
+  #   
+  #   Uc <- sum(y_sust)
+  #   
+  #   # Agora concatenamos na ordem alpha, (betas), (phis), (thetas), sigma
+  #   
+  #   ## (Joaquim) não sei o que deve ser alterado aqui
+  #   score <- c(Ualpha)
+  #   if(k>0)  score <- c(score, Ubeta)
+  #   if(p1>0) score <- c(score, Uphi)
+  #   if(q1>0) score <- c(score, Utheta)
+  #   score <- c(score, Uc)
+  #   
+  #   return(score)
+  # }
   
   #----------------------------------------------------------------------------
   # 5) Chamada ao 'optim'
@@ -325,21 +326,21 @@ LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1,
   opt <- optim(
     par     = initial,
     fn      = loglik,
-    gr      = escore.UGoarma,
+    # gr      = escore.UGoarma,
     method  = "BFGS",
     hessian = TRUE,
     control = list(fnscale = -1, maxit = maxit1, reltol = 1e-12)
   )
   
   if (opt$convergence != 0) {
-    warning("FUNÇÃO NÃO CONVERGIU COM GRADIENTE ANALÍTICO!")
-    opt <- optim(
-      par     = initial,
-      fn      = loglik, 
-      method  = "BFGS",
-      hessian = TRUE,
-      control = list(fnscale = -1, maxit = maxit1, reltol = 1e-12)
-    )
+    # warning("FUNÇÃO NÃO CONVERGIU COM GRADIENTE ANALÍTICO!")
+    # opt <- optim(
+    #   par     = initial,
+    #   fn      = loglik, 
+    #   method  = "BFGS",
+    #   hessian = TRUE,
+    #   control = list(fnscale = -1, maxit = maxit1, reltol = 1e-12)
+    # )
     if (opt$convergence != 0){
       warning("NÃO CONVERGIU NEM COM GRADIENTE NUMÉRICO!")
     } else {
@@ -368,8 +369,9 @@ LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1,
   names_par <- c("alpha", 
                  if(k>0) names_beta,
                  if(p1>0) names_phi,
-                 if(q1>0) names_theta,   #(Joaquim) ALTERAR
-                 "sigma")
+                 if(q1>0) names_theta#,   #(Joaquim) ALTERAR
+                 # "sigma"
+                 )
   names(z$par)      <- names_par
   names(z$stderror) <- names_par
   names(z$zstat)    <- names_par
@@ -400,7 +402,7 @@ LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1,
   if(p1>0) phi <- z$par[i_phi] else phi <- numeric(0)
   i_theta <- (1 + k + p1 + 1) : (1 + k + p1 + q1)
   if(q1>0) theta <- z$par[i_theta] else theta <- numeric(0)
-  sigma <- z$par[length(z$par)]
+  # sigma <- z$par[length(z$par)]
   
   # Criar vetores para armazenar valores
   errorhat <- rep(0, n)
@@ -475,12 +477,11 @@ LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1,
   #----------------------------------------------------------------------------
   # 7) Resíduos quantílicos (se tiver pUGo disponível)
   #----------------------------------------------------------------------------
-  if(exists("pLB")) {
-    z$residuals <- as.vector(qnorm(pUGo(y[(m+1):n], z$fitted[(m+1):n], sigma))) # (Joaquim) modificar
-  } else {
-    z$residuals <- NA
-    warning("Função pLB não encontrada, resíduos quantílicos não foram calculados.")
-  }
+  # if(exists("pLB")) {
+  # } else {
+  #   z$residuals <- NA
+  #   warning("Função pLB não encontrada, resíduos quantílicos não foram calculados.")
+  # }
   
   #----------------------------------------------------------------------------
   # 8) Diagnósticos (opcional)
@@ -511,14 +512,13 @@ LogBarma.fit <- function(y, ar = 1, ma = 1, link = "logit", h = 1,
 # Exemplo de uso
 #------------------------------------------------------------------------------
 # Ajuste o caminho para suas funções:
-source("simu.LogBarma.R")
+# source("simu.LogBarma.R")
 
 # Exemplo com (p1=1, q1=1) e nenhuma covariável => total de 4 parâmetros:
 # set.seed(2)
-# y <- simu.ugoarma(100, phi=0.2, theta=0.4, alpha=1, sigma=6, tau=0.5, freq=12, link="logit")
+# y <- simu.LogBarma(100,phi=0.2, theta=0.3, alpha=2)
 # 
 # 
-# 
-# fit <- uGoarma.fit(y, ma=1, ar=1, diag=1)
+# fit <- LogBarma.fit(y, ma=1, ar=1,)  #Por que perde o "diag"??
 # 
 # fit$model
