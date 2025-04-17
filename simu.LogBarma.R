@@ -2,7 +2,7 @@
 # FUNÇÃO PARA SIMULAÇÃO DE SÉRIES TEMPORAIS USANDO O MODELO LOG-BILAL ARMA
 # ---------------------------------------------------------------------------
 simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
-                         link="logit") # phi = Autoregressivo             theta = Médias moveis           tau = quantil
+                          link="logit") # phi = Autoregressivo             theta = Médias moveis           tau = quantil
 {
   source("LogB-functions.R")
   
@@ -66,7 +66,7 @@ simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
       y[i]    <- qLB(u,mu[i])
       ynew[i] <- linkfun(y[i])
       error[i]<- ynew[i]-eta[i]
-     #print(y[i])
+      #print(y[i])
     }
     
     
@@ -77,6 +77,3 @@ simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
 # 
 # dados=simu.LogBarma(100)
 # plot(dados)
-# 
-#y<-simu.ugoarma(10000)
-#plot(simu.ugoarma(1000))
