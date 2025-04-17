@@ -65,17 +65,15 @@ legend("topleft", legend = c("PDF teórica"), col = "red", lwd = 1, cex = 0.7)
 
 
 # ------------------------------------------------------------
-# Função de Log-Verossimilhança
+# 6. LOG-VEROSSIMILHANÇA
 # ------------------------------------------------------------
 log_lik_LB <- function(theta, y) {
   mu <- theta[1]
   
-  # Check for valid input
   if (mu <= 0 || any(y <= 0 | y >= 1)) {
     return(-Inf)
   }
   
-  # Your original log-likelihood expression (but with 'y' instead of 'y1')
   ll <- log(12 / ((mu / (mu + 24))^(-1/2) - 5)) + 
     (4 / ((mu / (mu + 24))^(-1/2) - 5) - 1) * log(y) + 
     log(1 - y^(2 / ((mu / (mu + 24))^(-1/2) - 5)))
