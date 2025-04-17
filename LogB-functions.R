@@ -50,3 +50,4 @@ qLB <- function(u,mu){
 # y=.6
 # mu=.15
 # u=pLB(y,mu)
+# qLB(u,mu)
