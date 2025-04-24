@@ -1,4 +1,3 @@
-source("LogB-functions.R")
 library(gamlss)
 
 LB <- expression(
