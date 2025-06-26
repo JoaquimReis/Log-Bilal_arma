@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # FUNÇÃO PARA AJUSTE DO MODELO LOG-BILAL ARMA
 # ---------------------------------------------------------------------------
-LogBarma.fit<-function (y, ar = NA, ma = NA, link = "logit",
+LB_fit<-function (y, ar = NA, ma = NA, link = "logit",
                         h=0, diag=0,X = NA,X_hat=NA)
 {
   # source("ubxii-funcs.r")
