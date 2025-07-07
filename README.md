@@ -13,10 +13,12 @@ This framework enables parsimonious modeling of unit-valued dynamic data, such a
 
 ## 📂 Repository Contents
 
-- `LogB-functions.r` – Auxiliary functions for the model.
-- `LogBarma.fit` – Main function for model fitting.
-- Simulation scripts, model fitting routines, and Monte Carlo experiments.
-- Numerical results and illustrative plots.
+- `LogB-functions.R` – Support functions (density, CDF, random generator).
+- `simu.LogBarma.R` – Time series simulation using the Log-Bilal ARMA model.  
+- `LB_fit.R` – Core function to fit the Log-Bilal ARMA model.
+- `novoFIT.R` – Alternative model fitting procedure using the **score vector** (under testing).
+- `Monte_Carlo-LB.R` – Monte Carlo simulation (1,1).  
+- `LB_gamlss.R` – GAMLSS-based implementation for Log-Bilal distributions.
 
 ## 📊 Applications
 
