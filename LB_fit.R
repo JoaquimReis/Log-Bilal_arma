@@ -1,10 +1,10 @@
 # ---------------------------------------------------------------------------
 # FUNÇÃO PARA AJUSTE DO MODELO LOG-BILAL ARMA
 # ---------------------------------------------------------------------------
-LB_fit<-function (y, ar = NA, ma = NA, link = "logit",
-                        h=0, diag=0,X = NA,X_hat=NA)
+LogBarma.fit<-function (y, ar = NA, ma = NA, link = "logit",
+                        h=1, diag=0,X = NA,X_hat=NA)
 {
-  # source("ubxii-funcs.r")
+  source("LogB-functions.r")
   if (min(y) <= 0 || max(y) >= 1)
     stop("OUT OF RANGE (0,1)!")
   
@@ -169,4 +169,4 @@ LB_fit<-function (y, ar = NA, ma = NA, link = "logit",
 #set.seed(2)
 #y <- simu.LogBarma(100,phi=0.2, theta=0.3, alpha=2)
 #fit <- LogBarma.fit(y, ma=1, ar=1,)
-#fit$model
+# fit$model
