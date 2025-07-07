@@ -59,14 +59,14 @@ simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
     for(i in (m+1):(n+m))
     {
       eta[i]  <- alpha + as.numeric(phi%*%ynew[i-ar]) + as.numeric(theta%*%error[i-ma])
-      # print(as.numeric(theta%*%error[i-ma]))
-      # print(eta[i])
       mu[i]   <- linkinv(eta[i])
-      u <- runif(1)
-      y[i]    <- qLB(u,mu[i])
+      #u <- runif(1)
+      y[i]    <- rLB(1,mu[i])
+      # if(y[i]==1){
+      #   u <- runif(1)
+      #   y[i]    <- qLB(u,mu[i])
       ynew[i] <- linkfun(y[i])
       error[i]<- ynew[i]-eta[i]
-      #print(y[i])
     }
     
     
@@ -74,6 +74,10 @@ simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
   } 
 }
 
-# 
-# dados=simu.LogBarma(100)
+# set.seed(10)
+# # dados=simu.LogBarma(1000,phi=c(.1,.2),theta=theta,alpha=2)
+# dados=simu.LogBarma(1000,phi=c(.71,.2),theta=theta,alpha=2)
 # plot(dados)
+
+# X=cos(2*pi*1:100/12)
+# X=sin(2*pi*1:100/12)
