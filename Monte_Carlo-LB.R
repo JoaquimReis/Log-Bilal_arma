@@ -1,10 +1,10 @@
 # Modelo ARMA(1,1) - Apenas Médias Móveis
 
-# rm(list = ls())
+rm(list = ls())
 
 set.seed(10)
 source("simu.LogBarma.R")
-source("LB_fit.R")
+source("novoFIT.R")
 
 # Definição de parâmetros
 alpha <- 2
@@ -40,7 +40,7 @@ system.time({
         bug <- bug + 1
       } else {
         estim[i, ] <- fit1$coeff
-        err[i, ] <- sqrt(diag(solve(-fit1$loglik)))
+        err[i, ] <- fit1$stderror
         
         if (!any(is.na(estim[i, ])) && !any(is.na(err[i, ]))) {
           # Intervalos de Confiança
