@@ -1,18 +1,18 @@
-# Modelo ARMA(1,1) - Apenas Médias Móveis
+# Modelo ARMA(1,1) 
 
 rm(list = ls())
 
 set.seed(10)
 source("simu.LogBarma.R")
-source("novoFIT.R")
+source("LB_fit.R")
 
 # Definição de parâmetros
-alpha <- 2
-phi <- 0.2  # AR
-theta <- -0.4  # MA
+alpha <- 1.7
+phi <- 0.8  # AR
+theta <- -0.6  # MA
 true_values <- c(alpha, phi, theta)  # Valores reais dos parâmetros
 vn <- c(70, 150, 300, 500, 1000)  # Tamanhos amostrais
-R <- 100 
+R <- 1000
 z <- 1.96 
 
 ar1 <- 1
@@ -34,7 +34,7 @@ system.time({
     
     for (i in 1:R) {
       y <- simu.LogBarma(n, phi = phi, theta = theta, alpha = alpha, freq = 12, link = "logit")
-      fit1 <- try(suppressWarnings(LogBarma.fit(y, ma = ar1, ar = ar1)), silent = TRUE)
+      fit1 <- try(suppressWarnings(LogBarma.fit(y, ma = ma1, ar = ar1)), silent = TRUE)
       
       if (inherits(fit1, "try-error") ) {#|| fit1$convergence != 0) {
         bug <- bug + 1
