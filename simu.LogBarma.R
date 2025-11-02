@@ -1,10 +1,10 @@
 # ---------------------------------------------------------------------------
-# FUNÇÃO PARA SIMULAÇÃO DE SÉRIES TEMPORAIS USANDO O MODELO LOG-BILAL ARMA
+# FUNÇÃO PARA SIMULAÇÃO DE SÉRIES TEMPORAIS USANDO O MODELO RUR ARMA
 # ---------------------------------------------------------------------------
-simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
-                          link="logit") # phi = Autoregressivo             theta = Médias moveis           tau = quantil
+simu.RUR <- function(n,phi=0.2,theta=0.4, alpha=1, tau=0.5, freq=12,
+                             link="logit") # phi = Autoregressivo             theta = Médias moveis           tau = quantil
 {
-  source("LogB-functions.R")
+  source("Funcoes.R")
   
   
   if(any(is.na(phi)==F))
@@ -60,11 +60,7 @@ simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
     {
       eta[i]  <- alpha + as.numeric(phi%*%ynew[i-ar]) + as.numeric(theta%*%error[i-ma])
       mu[i]   <- linkinv(eta[i])
-      #u <- runif(1)
-      y[i]    <- rLB(1,mu[i])
-      # if(y[i]==1){
-      #   u <- runif(1)
-      #   y[i]    <- qLB(u,mu[i])
+      y[i]    <- rRUR(1,mu[i],tau)
       ynew[i] <- linkfun(y[i])
       error[i]<- ynew[i]-eta[i]
     }
@@ -74,10 +70,7 @@ simu.LogBarma <- function(n,phi=0.2, theta=0.3, alpha=1,freq=12,
   } 
 }
 
-# set.seed(10)
-# # dados=simu.LogBarma(1000,phi=c(.1,.2),theta=theta,alpha=2)
-# dados=simu.LogBarma(1000,phi=c(.71,.2),theta=theta,alpha=2)
-# plot(dados)
 
-# X=cos(2*pi*1:100/12)
-# X=sin(2*pi*1:100/12)
+# plot(simu.RUR(100))
+# y<-simu.RUR(10000)
+# plot(simu.RUR(1000))
