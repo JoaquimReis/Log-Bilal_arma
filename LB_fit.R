@@ -164,9 +164,9 @@ LogBarma.fit<-function (y, ar = NA, ma = NA, link = "logit",
 #------------------------------------------------------------------------------
 # Ajuste o caminho para suas funções:
 # source("simu.LogBarma.R")
-
-# Exemplo com (p1=1, q1=1) e nenhuma covariável => total de 3 parâmetros:
-#set.seed(2)
-#y <- simu.LogBarma(100,phi=0.2, theta=0.3, alpha=2)
-#fit <- LogBarma.fit(y, ma=1, ar=1,)
+# 
+# # Exemplo com (p1=1, q1=1) e nenhuma covariável => total de 3 parâmetros:
+# set.seed(2)
+# y <- simu.LogBarma(100,phi=0.2, theta=0.3, alpha=2)
+# fit <- LogBarma.fit(y, ma=1, ar=1,)
 # fit$model
