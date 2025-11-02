@@ -1,0 +1,80 @@
+# Modelo ARMA(0,1) - Apenas Médias Móveis
+
+rm(list = ls())
+
+set.seed(10)
+source("simu.LogBarma.R")
+source("LB_fit.R")
+
+# Definição de parâmetros
+alpha <- 2
+#phi <- 0.8  # AR
+theta <- -0.4  # MA
+true_values <- c(alpha, theta)  # Valores reais dos parâmetros
+vn <- c(70, 150, 300, 500, 1000)  # Tamanhos amostrais
+R <- 10000 
+z <- 1.96 
+
+ar1 <- NA
+ma1 <- 1
+
+start_time <- Sys.time()
+
+system.time({
+  for (n in vn) {
+    # Matrizes de resultados
+    estim <- ICi <- ICs <- err <- matrix(NA, nrow = R, ncol = length(true_values))
+    
+    # Contadores
+    calpha <- ctheta <- 0  # Contadores para os intervalos de confiança
+    bug <- 0  # Contador de falhas
+    
+    # Inicializa a barra de progresso
+    pb <- txtProgressBar(min = 0, max = R, style = 3)
+    
+    for (i in 1:R) {
+      y <- simu.LogBarma(n, phi = NA, theta = theta, alpha = alpha, freq = 12, link = "logit")
+      fit1 <- try(suppressWarnings(LogBarma.fit(y, ma = ma1, ar = ar1)), silent = TRUE)
+      
+      if (inherits(fit1, "try-error") ) {#|| fit1$convergence != 0) {
+        bug <- bug + 1
+      } else {
+        estim[i, ] <- fit1$coeff
+        err[i, ] <- fit1$stderror
+        
+        if (!any(is.na(estim[i, ])) && !any(is.na(err[i, ]))) {
+          # Intervalos de Confiança
+          ICi[i, ] <- estim[i, ] - (z * err[i, ])
+          ICs[i, ] <- estim[i, ] + (z * err[i, ])
+          
+          if (ICi[i, 1] <= alpha && ICs[i, 1] >= alpha) calpha <- calpha + 1
+          if (ICi[i, 2] <= theta && ICs[i, 2] >= theta) ctheta <- ctheta + 1
+        }
+      }
+      setTxtProgressBar(pb, i)
+    }
+    close(pb)
+    
+    # Estatísticas de desempenho
+    m <- colMeans(estim, na.rm = TRUE)
+    bias <- true_values - m
+    biasP <- (bias / true_values) * 100
+    erro <- apply(estim, 2, sd, na.rm = TRUE)
+    MSE <- apply(estim, 2, var, na.rm = TRUE) + bias^2
+    TC <- c(calpha, ctheta) / R
+    
+    # Resultados
+    results <- rbind(m, bias, biasP, erro, MSE, TC)
+    rownames(results) <- c("Mean", "Bias", "RB%", "SE", "MSE", "TC")
+    colnames(results) <- c("alpha", "theta")
+    print(c("Tamanho da Amostra:", n))
+    print(round(results, 4))
+    
+    # Exibir avisos, se houver
+    # print(warnings())
+  }
+})
+
+end_time <- Sys.time()
+execution_time <- end_time - start_time
+print(paste("Tempo total de execução:", round(as.numeric(execution_time, units = "secs")), "segundos"))
